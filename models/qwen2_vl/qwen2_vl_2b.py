@@ -88,9 +88,9 @@ for i in range(START_IDX, min(total_samples, 1000)):
                 trimmed_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
             )
 
-        print("\n🧠 Question:", question)
-        print("🖼️ Image:", image_path)
-        print(f"💬 Model Answer: {pred_answer[0]}\n")
+        print("\nQuestion:", question)
+        print("Image:", image_path)
+        print(f"Model Answer: {pred_answer[0]}\n")
         
     except Exception as e:
         print(f"Error on sample {i}: {e}")
