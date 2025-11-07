@@ -4,13 +4,15 @@ from transformers import (
     AutoModel, 
     CLIPModel,
 )
-import json
+from utils.helper import load_config
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-TEXT_MODEL = "bert-base-uncased"
-IMAGE_MODEL = "openai/clip-vit-base-patch32"
-NUM_CLASSES = 9  # handwritten, form, layout, table/list, others, free_text, Image/Photo, figure/diagram, Yes/No
-MAX_LEN = 64
+config = load_config('config.json')
+
+DEVICE = config['device']['cuda'] if torch.cuda.is_available() else config['device']['cpu']
+TEXT_MODEL = config['text_model']
+IMAGE_MODEL = config['image_model']
+NUM_CLASSES = len(config['classes'])
+MAX_LEN = config['max_len']
 
 class MultimodalClassifier(nn.Module):
     def __init__(self, text_model_name=TEXT_MODEL, image_model_name=IMAGE_MODEL, num_classes=NUM_CLASSES) -> None:

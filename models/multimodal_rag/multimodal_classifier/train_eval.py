@@ -2,14 +2,17 @@ import torch
 import torch.nn as nn
 from sklearn.metrics import classification_report, f1_score, accuracy_score, precision_score, recall_score
 from tqdm.auto import tqdm
-import json
 import numpy as np
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-TEXT_MODEL = "bert-base-uncased"
-IMAGE_MODEL = "openai/clip-vit-base-patch32"
-NUM_CLASSES = 9  # handwritten, form, layout, table/list, others, free_text, Image/Photo, figure/diagram, Yes/No
-MAX_LEN = 64
+from utils.helper import load_config
+
+config = load_config('config.json')
+
+DEVICE = config['device']['cuda'] if torch.cuda.is_available() else config['device']['cpu']
+TEXT_MODEL = config['text_model']
+IMAGE_MODEL = config['image_model']
+NUM_CLASSES = len(config['classes'])
+MAX_LEN = config['max_len']
 
 def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5):
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)

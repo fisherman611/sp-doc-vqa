@@ -17,8 +17,7 @@
         "figure/diagram",
         "Yes/No"
     ],
-    "num_classes": 9,
-    "max_len":64,
+    "max_len":128,
     "hidden_size": 512,
     "lr": 2e-5,
     "epoch": 5,
