@@ -1,0 +1,73 @@
+import torch
+from torch.utils.data import Dataset
+from PIL import Image
+from transformers import (
+    AutoTokenizer,
+    CLIPProcessor,
+)
+import numpy as np
+from tqdm.auto import tqdm
+import json
+from pathlib import Path
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+TEXT_MODEL = "bert-base-uncased"
+IMAGE_MODEL = "openai/clip-vit-base-patch32"
+NUM_CLASSES = 9  # handwritten, form, layout, table/list, others, free_text, Image/Photo, figure/diagram, Yes/No
+MAX_LEN = 64
+
+class DocVQAMultimodalDataset(Dataset):
+    def __init__(self, json_path, img_root, tokenizer, preprocess, label2id) -> None:
+        with open(json_path, 'r') as f:
+            self.data = json.load(f)
+        self.questions = [self.data['data'][i]['question'].strip() for i in range(len(self.data['data']))]
+        # self.questions = [self.data['data'][i]['question'].strip() for i in range(1)]
+        self.image_paths = [Path(self.data['data'][i]['image']).name for i in range(len(self.data['data']))]
+        # self.image_paths = [Path(self.data['data'][i]['image']).name for i in range(1)]
+        self.labels = []
+        for x in tqdm(self.data['data']):
+        # for x in tqdm(self.data['data'][:1]):
+            vec = np.zeros(len(label2id), dtype=np.float32)
+            for lbl in x['question_types']:
+                vec[label2id[lbl]] = 1.0
+            self.labels.append(vec)
+            
+        self.tokenizer = tokenizer
+        self.preprocess = preprocess
+        self.img_root = Path(img_root)
+        
+        
+    def __len__(self):
+        return len(self.questions)
+    
+    
+    def __getitem__(self, idx):
+        q = self.questions[idx]
+        enc = self.tokenizer(
+            q,
+            max_length=MAX_LEN,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt"
+        )
+        img_path = self.img_root / self.image_paths[idx]
+        image = Image.open(img_path).convert("RGB")
+        image_tensor = self.preprocess(images=image, return_tensors="pt")["pixel_values"].squeeze(0)
+
+        return {
+            "input_ids": enc["input_ids"].squeeze(0),
+            "attention_mask": enc["attention_mask"].squeeze(0),
+            "image": image_tensor,
+            "label": torch.tensor(self.labels[idx], dtype=torch.float)
+        }
+        
+# if __name__ == "__main__":
+#     tokenizer = AutoTokenizer.from_pretrained(TEXT_MODEL, use_fast=True)
+#     clip_proc = CLIPProcessor.from_pretrained(IMAGE_MODEL, use_fast=True)
+
+#     label_list = ["handwritten", "form", "layout", "table/list", "others", "free_text", "image/photo", "figure/diagram", "yes/no"]
+#     label2id = {lbl: i for i, lbl in enumerate(label_list)}
+
+#     train_ds = DocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", tokenizer, clip_proc.feature_extractor, label2id)
+#     print(len(train_ds))
+#     print(train_ds[0])    
