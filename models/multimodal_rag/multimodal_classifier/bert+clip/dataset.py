@@ -19,7 +19,7 @@ IMAGE_MODEL = config['image_model']
 NUM_CLASSES = len(config['classes'])
 MAX_LEN = config['max_len']
 
-class DocVQAMultimodalDataset(Dataset):
+class BertCLIPDocVQAMultimodalDataset(Dataset):
     def __init__(self, json_path, img_root, tokenizer, preprocess, label2id) -> None:
         with open(json_path, 'r') as f:
             self.data = json.load(f)
