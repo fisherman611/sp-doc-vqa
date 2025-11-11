@@ -20,7 +20,7 @@ NUM_CLASSES = len(config['classes'])
 MAX_LEN = config['max_len']
 
 class BertCLIPDocVQAMultimodalDataset(Dataset):
-    def __init__(self, json_path, img_root, tokenizer, preprocess, label2id) -> None:
+    def __init__(self, json_path, img_root, tokenizer, preprocess, label2id, max_len=MAX_LEN) -> None:
         with open(json_path, 'r') as f:
             self.data = json.load(f)
         self.questions = [self.data['data'][i]['question'].strip() for i in range(len(self.data['data']))]
@@ -38,6 +38,7 @@ class BertCLIPDocVQAMultimodalDataset(Dataset):
         self.tokenizer = tokenizer
         self.preprocess = preprocess
         self.img_root = Path(img_root)
+        self.max_len = max_len
         
         
     def __len__(self):
@@ -48,7 +49,7 @@ class BertCLIPDocVQAMultimodalDataset(Dataset):
         q = self.questions[idx]
         enc = self.tokenizer(
             q,
-            max_length=MAX_LEN,
+            max_length=self.max_len,
             padding="max_length",
             truncation=True,
             return_tensors="pt"
