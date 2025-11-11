@@ -71,6 +71,6 @@ class BertCLIPDocVQAMultimodalDataset(Dataset):
 #     label_list = ["handwritten", "form", "layout", "table/list", "others", "free_text", "image/photo", "figure/diagram", "yes/no"]
 #     label2id = {lbl: i for i, lbl in enumerate(label_list)}
 
-#     train_ds = DocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", tokenizer, clip_proc.feature_extractor, label2id)
+#     train_ds = BertCLIPDocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", tokenizer, clip_proc.feature_extractor, label2id)
 #     print(len(train_ds))
 #     print(train_ds[0])    

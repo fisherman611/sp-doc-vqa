@@ -14,7 +14,7 @@ IMAGE_MODEL = config['image_model']
 NUM_CLASSES = len(config['classes'])
 MAX_LEN = config['max_len']
 
-class MultimodalClassifier(nn.Module):
+class BertCLIPMultimodalClassifier(nn.Module):
     def __init__(self, text_model_name=TEXT_MODEL, image_model_name=IMAGE_MODEL, num_classes=NUM_CLASSES) -> None:
         super().__init__()
         self.text_encoder = AutoModel.from_pretrained(text_model_name)

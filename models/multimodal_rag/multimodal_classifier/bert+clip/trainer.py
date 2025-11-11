@@ -27,5 +27,5 @@ val_ds = BertCLIPDocVQAMultimodalDataset("val.csv", "documents", tokenizer, clip
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
 
-model = MultimodalClassifier(TEXT_MODEL, IMAGE_MODEL, NUM_CLASSES)
+model = BertCLIPMultimodalClassifier(TEXT_MODEL, IMAGE_MODEL, NUM_CLASSES)
 train_model(model, train_loader, val_loader, label2id, epochs=EPOCHS, lr=LEARNING_RATE)
