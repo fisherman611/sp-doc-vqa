@@ -65,12 +65,12 @@ class CLIPDocVQAMultimodalDataset(Dataset):
         item["labels"] = torch.tensor(self.labels[idx], dtype=torch.float)
         return item
     
-if __name__ == "__main__":
-    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)
+# if __name__ == "__main__":
+#     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)
 
-    label_list = ["handwritten", "form", "layout", "table/list", "others", "free_text", "Image/Photo", "figure/diagram", "Yes/No"]
-    label2id = {lbl: i for i, lbl in enumerate(label_list)}
+#     label_list = ["handwritten", "form", "layout", "table/list", "others", "free_text", "Image/Photo", "figure/diagram", "Yes/No"]
+#     label2id = {lbl: i for i, lbl in enumerate(label_list)}
 
-    train_ds = CLIPDocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", processor=processor, label2id=label2id)
-    print(len(train_ds))
-    print(train_ds[0])  
+#     train_ds = CLIPDocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", processor=processor, label2id=label2id)
+#     print(len(train_ds))
+#     print(train_ds[0])  
