@@ -24,15 +24,22 @@ NUM_CLASSES = len(config['classes'])
 MAX_LEN = config['max_len']
 
 class CLIPMultimodalClassifier(nn.Module):
-    def __init__(self, model_name=MODEL, num_labels=NUM_CLASSES) -> None:
+    def __init__(self, model_name=MODEL, num_labels=NUM_CLASSES, freeze_clip=True) -> None:
         super().__init__()
         self.clip = CLIPModel.from_pretrained(model_name)
-        emb_dim = self.clip.text_projection.shape[1]
+        emb_dim = self.clip.config.projection_dim
+
+        fused_dim = emb_dim * 2
         self.classifier = nn.Sequential(
-            nn.Linear(emb_dim, 512),
+            nn.Linear(fused_dim, 512),
             nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Linear(512, num_labels)
         )
+
+        if freeze_clip:
+            for p in self.clip.parameters():
+                p.requires_grad = False
 
 
     def forward(self, input_ids, attention_mask, pixel_values):
