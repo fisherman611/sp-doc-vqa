@@ -17,8 +17,7 @@ from utils.helper import load_config
 config = load_config('models/multimodal_rag/multimodal_classifier/clip/config.json')
 
 DEVICE = config['device']['cuda'] if torch.cuda.is_available() else config['device']['cpu']
-TEXT_MODEL = config['text_model']
-IMAGE_MODEL = config['image_model']
+MODEL = config['model']
 NUM_CLASSES = len(config['classes'])
 MAX_LEN = config['max_len']
 

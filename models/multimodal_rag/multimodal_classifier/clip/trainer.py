@@ -28,7 +28,7 @@ label_list = config['classes']
 label2id = {lbl: i for i, lbl in enumerate(label_list)}
 
 train_ds = CLIPDocVQAMultimodalDataset("data/spdocvqa_qas/train_v1.0_withQT.json", "data/spdocvqa_images", clip_proc.image_processor, label2id)
-val_ds = CLIPDocVQAMultimodalDataset("data/spdocvqa_qas/train_v1.0_withQT.json", "data/spdocvqa_images", clip_proc.image_processor, label2id)
+val_ds = CLIPDocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", clip_proc.image_processor, label2id)
 
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
