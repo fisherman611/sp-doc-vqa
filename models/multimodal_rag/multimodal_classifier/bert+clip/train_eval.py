@@ -1,3 +1,11 @@
+import os
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import torch
 import torch.nn as nn
 from sklearn.metrics import classification_report, f1_score, accuracy_score, precision_score, recall_score
@@ -6,7 +14,7 @@ import numpy as np
 
 from utils.helper import load_config
 
-config = load_config('config.json')
+config = load_config('models/multimodal_rag/multimodal_classifier/bert+clip/config.json')
 
 DEVICE = config['device']['cuda'] if torch.cuda.is_available() else config['device']['cpu']
 TEXT_MODEL = config['text_model']
