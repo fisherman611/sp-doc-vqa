@@ -110,30 +110,3 @@ def evaluate(model, val_loader, label2id, threshold=0.5):
           f"MacroF1={macro_f1:.4f} | MicroF1={micro_f1:.4f}")
 
     return subset_acc, micro_acc, macro_f1, micro_f1
-
-def load_best_model(model, checkpoint_path="checkpoints/best_model.pt"):
-    """
-    Load the best model checkpoint.
-    
-    Args:
-        model: The model architecture to load weights into
-        checkpoint_path: Path to the checkpoint file
-        
-    Returns:
-        model: Model with loaded weights
-        checkpoint: Dictionary containing metrics and other info
-    """
-    if not os.path.exists(checkpoint_path):
-        raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
-    
-    checkpoint = torch.load(checkpoint_path, map_location=DEVICE)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(DEVICE)
-    
-    print(f"Loaded best model from epoch {checkpoint['epoch']}")
-    print(f"Metrics: MacroF1={checkpoint['best_macro_f1']:.4f}, "
-          f"MicroF1={checkpoint['micro_f1']:.4f}, "
-          f"SubsetAcc={checkpoint['subset_acc']:.4f}")
-    
-    return model, checkpoint
-
