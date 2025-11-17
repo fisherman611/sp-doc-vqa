@@ -22,7 +22,7 @@ BATCH_SIZE = config["batch_size"]
 LEARNING_RATE = config["lr"]
 MODEL = config["image_model"]
 
-clip_proc = CLIPProcessor.from_pretrained(MODEL)
+clip_proc = CLIPProcessor.from_pretrained(MODEL, use_fast=True)
 
 label_list = config['classes']
 label2id = {lbl: i for i, lbl in enumerate(label_list)}

@@ -23,8 +23,8 @@ LEARNING_RATE = config["lr"]
 TEXT_MODEL = config["text_model"]
 IMAGE_MODEL = config["image_model"]
 
-tokenizer = AutoTokenizer.from_pretrained(TEXT_MODEL)
-clip_proc = CLIPProcessor.from_pretrained(IMAGE_MODEL)
+tokenizer = AutoTokenizer.from_pretrained(TEXT_MODEL, use_fast=True)
+clip_proc = CLIPProcessor.from_pretrained(IMAGE_MODEL, use_fast=True)
 
 label_list = config['classes']
 label2id = {lbl: i for i, lbl in enumerate(label_list)}
