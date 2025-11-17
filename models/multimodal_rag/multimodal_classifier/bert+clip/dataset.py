@@ -69,7 +69,7 @@ class BertCLIPDocVQAMultimodalDataset(Dataset):
 #     tokenizer = AutoTokenizer.from_pretrained(TEXT_MODEL, use_fast=True)
 #     clip_proc = CLIPProcessor.from_pretrained(IMAGE_MODEL, use_fast=True)
 
-#     label_list = ["handwritten", "form", "layout", "table/list", "others", "free_text", "image/photo", "figure/diagram", "yes/no"]
+#     label_list = ["handwritten", "form", "layout", "table/list", "others", "free_text", "Image/Photo", "figure/diagram", "Yes/No"]
 #     label2id = {lbl: i for i, lbl in enumerate(label_list)}
 
 #     train_ds = BertCLIPDocVQAMultimodalDataset("data/spdocvqa_qas/val_v1.0_withQT.json", "data/spdocvqa_images", tokenizer, clip_proc.feature_extractor, label2id)
