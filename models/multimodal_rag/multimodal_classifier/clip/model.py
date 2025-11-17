@@ -1,3 +1,11 @@
+import os
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import json
 import torch
 import torch.nn as nn
@@ -6,22 +14,17 @@ from transformers import CLIPProcessor, CLIPModel
 from sklearn.metrics import f1_score, average_precision_score
 from tqdm import tqdm
 from PIL import Image
+from utils.helper import load_config
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-NUM_LABELS = 9  # adjust to your total label count
-LABELS = [
-    "handwritten", "form", "layout", "table/list", "others",
-    "free_text", "Image/Photo", "figure/diagram", "Yes/No"
-]
-JSON_PATH = "data/spdocvqa_qas/val_v1.0_withQT.json"
-IMAGE_FOLDER = "documents/"
-BATCH_SIZE = 8
-EPOCHS = 5
-LR = 2e-5
-MODEL = "openai/clip-vit-base-patch32"
+config = load_config('models/multimodal_rag/multimodal_classifier/clip/config.json')
+
+DEVICE = config['device']['cuda'] if torch.cuda.is_available() else config['device']['cpu']
+MODEL = config['model']
+NUM_CLASSES = len(config['classes'])
+MAX_LEN = config['max_len']
 
 class CLIPMultimodalClassifier(nn.Module):
-    def __init__(self, model_name=MODEL, num_labels=NUM_LABELS) -> None:
+    def __init__(self, model_name=MODEL, num_labels=NUM_CLASSES) -> None:
         super().__init__()
         self.clip = CLIPModel.from_pretrained(model_name)
         emb_dim = self.clip.text_projection.shape[1]
