@@ -57,13 +57,16 @@ class CLIPDocVQAMultimodalDataset(Dataset):
             images=image,
             return_tensors="pt",
             padding="max_length",
-            truncation=True,
-            max_length=self.max_len,
+            max_length=MAX_LEN,
+            truncation=True, 
         )
         
-        item = {k: v.squeeze(0) for k, v in enc.items()}
-        item["labels"] = torch.tensor(self.labels[idx], dtype=torch.float)
-        return item
+        return {
+            "input_ids": enc["input_ids"].squeeze(0),
+            "attention_mask": enc["attention_mask"].squeeze(0),
+            "pixel_values": enc["pixel_values"].squeeze(0),
+            "label": torch.tensor(self.labels[idx], dtype=torch.float)
+        }
     
 # if __name__ == "__main__":
 #     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_fast=True)

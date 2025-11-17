@@ -44,7 +44,7 @@ def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5):
             total_loss += loss.item()
 
         print(f"Train loss: {total_loss / len(train_loader):.4f}")
-        evaluate(model, val_loader)
+        evaluate(model, val_loader, label2id)
 
 @torch.no_grad()
 def evaluate(model, val_loader, label2id, threshold=0.5):

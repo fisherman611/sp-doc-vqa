@@ -33,7 +33,7 @@ def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5):
             optimizer.zero_grad()
             ids = batch["input_ids"].to(DEVICE)
             mask = batch["attention_mask"].to(DEVICE)
-            imgs = batch["image"].to(DEVICE)
+            imgs = batch["pixel_values"].to(DEVICE)
             labels = batch["label"].to(DEVICE)
 
             logits = model(ids, mask, imgs)
@@ -43,7 +43,7 @@ def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5):
             total_loss += loss.item()
 
         print(f"Train loss: {total_loss / len(train_loader):.4f}")
-        evaluate(model, val_loader)
+        evaluate(model, val_loader, label2id)
 
 @torch.no_grad()
 def evaluate(model, val_loader, label2id, threshold=0.5):
@@ -52,7 +52,7 @@ def evaluate(model, val_loader, label2id, threshold=0.5):
     for batch in val_loader:
         ids = batch["input_ids"].to(DEVICE)
         mask = batch["attention_mask"].to(DEVICE)
-        imgs = batch["image"].to(DEVICE)
+        imgs = batch["pixel_values"].to(DEVICE)
         lbls = batch["label"].cpu().numpy()  # shape [B, num_classes]
 
         logits = model(ids, mask, imgs)
