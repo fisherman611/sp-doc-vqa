@@ -57,7 +57,7 @@ class CLIPDocVQAMultimodalDataset(Dataset):
             images=image,
             return_tensors="pt",
             padding="max_length",
-            max_length=MAX_LEN,
+            max_length=self.max_len,
             truncation=True, 
         )
         
