@@ -21,10 +21,18 @@ MODEL = config['model']
 NUM_CLASSES = len(config['classes'])
 MAX_LEN = config['max_len']
 
-def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5):
+def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5, save_dir="checkpoints"):
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     criterion = nn.BCEWithLogitsLoss()
     model.to(DEVICE)
+    
+    # Create save directory if it doesn't exist
+    os.makedirs(save_dir, exist_ok=True)
+    best_model_path = os.path.join(save_dir, "best_model.pt")
+    
+    # Track best metrics
+    best_macro_f1 = 0.0
+    best_epoch = 0
 
     for epoch in range(epochs):
         model.train()
@@ -42,8 +50,31 @@ def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5):
             optimizer.step()
             total_loss += loss.item()
 
-        print(f"Train loss: {total_loss / len(train_loader):.4f}")
-        evaluate(model, val_loader, label2id)
+        avg_train_loss = total_loss / len(train_loader)
+        print(f"Train loss: {avg_train_loss:.4f}")
+        
+        # Evaluate and get metrics
+        subset_acc, micro_acc, macro_f1, micro_f1 = evaluate(model, val_loader, label2id)
+        
+        # Save best model based on macro F1 score
+        if macro_f1 > best_macro_f1:
+            best_macro_f1 = macro_f1
+            best_epoch = epoch + 1
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'best_macro_f1': best_macro_f1,
+                'subset_acc': subset_acc,
+                'micro_acc': micro_acc,
+                'micro_f1': micro_f1,
+            }, best_model_path)
+            print(f"✓ Best model saved at epoch {epoch+1} with Macro F1: {macro_f1:.4f}")
+    
+    print(f"\nTraining completed! Best model from epoch {best_epoch} with Macro F1: {best_macro_f1:.4f}")
+    print(f"Best model saved at: {best_model_path}")
+    
+    return best_model_path
 
 @torch.no_grad()
 def evaluate(model, val_loader, label2id, threshold=0.5):
@@ -67,8 +98,8 @@ def evaluate(model, val_loader, label2id, threshold=0.5):
 
     # === Metrics ===
     subset_acc = (y_true == y_pred).all(axis=1).mean()  # exact match accuracy
-    macro_f1 = f1_score(y_true, y_pred, average="macro")
-    micro_f1 = f1_score(y_true, y_pred, average="micro")
+    macro_f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
+    micro_f1 = f1_score(y_true, y_pred, average="micro", zero_division=0)
 
     # Micro accuracy (Jaccard-based)
     intersection = np.logical_and(y_true, y_pred).sum()
@@ -79,4 +110,30 @@ def evaluate(model, val_loader, label2id, threshold=0.5):
           f"MacroF1={macro_f1:.4f} | MicroF1={micro_f1:.4f}")
 
     return subset_acc, micro_acc, macro_f1, micro_f1
+
+def load_best_model(model, checkpoint_path="checkpoints/best_model.pt"):
+    """
+    Load the best model checkpoint.
+    
+    Args:
+        model: The model architecture to load weights into
+        checkpoint_path: Path to the checkpoint file
+        
+    Returns:
+        model: Model with loaded weights
+        checkpoint: Dictionary containing metrics and other info
+    """
+    if not os.path.exists(checkpoint_path):
+        raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
+    
+    checkpoint = torch.load(checkpoint_path, map_location=DEVICE)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.to(DEVICE)
+    
+    print(f"Loaded best model from epoch {checkpoint['epoch']}")
+    print(f"Metrics: MacroF1={checkpoint['best_macro_f1']:.4f}, "
+          f"MicroF1={checkpoint['micro_f1']:.4f}, "
+          f"SubsetAcc={checkpoint['subset_acc']:.4f}")
+    
+    return model, checkpoint
 
