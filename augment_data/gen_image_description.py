@@ -125,8 +125,12 @@ for i in range(min(total_samples, 1000)):  # limit if needed
     # --- STORE RESULT ---
     results.append({
         "questionId": sample.get("questionId"),
+        "question": sample.get("question"),
+        "question_types": sample.get("question_types"),
         "image": str(image_path),
         "description": description,
+        "docId": sample.get("docId"),
+        "answers": sample.get("answers"),
         "timestamp": datetime.now().isoformat()
     })
 
