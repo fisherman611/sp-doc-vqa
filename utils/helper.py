@@ -32,3 +32,47 @@ def load_best_model(model, checkpoint_path="checkpoints/best_model.pt", device="
           f"SubsetAcc={checkpoint['subset_acc']:.4f}")
     
     return model, checkpoint
+
+def label_recall(pred, gt):
+    """
+    pred: list of predicted labels (strings)
+    gt:   list of groundtruth labels (strings)
+
+    Returns recall in [0,1].
+    """
+    pred_set = set(pred)
+    gt_set = set(gt)
+
+    if len(gt_set) == 0:
+        return 1.0
+
+    intersection = pred_set & gt_set
+    return len(intersection) / len(gt_set)
+
+def label_recall_micro(preds, gts):
+    """
+    preds: list of predicted label lists
+    gts:   list of groundtruth label lists
+
+    Micro recall = total correct / total groundtruth labels
+    """
+    total_correct = 0
+    total_gt = 0
+
+    for pred, gt in zip(preds, gts):
+        pred_set = set(pred)
+        gt_set = set(gt)
+        total_correct += len(pred_set & gt_set)
+        total_gt += len(gt_set)
+
+    if total_gt == 0:
+        return 1.0
+
+    return total_correct / total_gt
+
+
+def label_recall_macro(preds, gts):
+    scores = []
+    for pred, gt in zip(preds, gts):
+        scores.append(label_recall(pred, gt))
+    return sum(scores) / len(scores)
