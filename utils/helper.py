@@ -28,9 +28,8 @@ def load_best_model(model, checkpoint_path="checkpoints/best_model.pt", device="
     model.to(device)
     
     print(f"Loaded best model from epoch {checkpoint['epoch']}")
-    print(f"Metrics: MacroF1={checkpoint['best_macro_f1']:.4f}, "
-          f"MicroF1={checkpoint['micro_f1']:.4f}, "
-          f"SubsetAcc={checkpoint['subset_acc']:.4f}")
+    print(f"Metrics: Jaccard={checkpoint['best_jaccard']:.4f}, "
+          f"Macro Label Recall={checkpoint['macro_label_recall']:.4f}")
     
     return model, checkpoint
 
