@@ -8,7 +8,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import torch
 import torch.nn as nn
-from sklearn.metrics import classification_report, f1_score, accuracy_score, precision_score, recall_score
+from sklearn.metrics import classification_report, f1_score, accuracy_score, precision_score, recall_score, hamming_loss, jaccard_score
 from tqdm.auto import tqdm
 import numpy as np
 
@@ -32,7 +32,7 @@ def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5, sa
     best_model_path = os.path.join(save_dir, "best_model.pt")
 
     # Track best metrics
-    best_macro_f1 = 0.0
+    best_jaccard = 0.0
     best_epoch = 0
 
     for epoch in range(epochs):
@@ -55,24 +55,23 @@ def train_model(model, train_loader, val_loader, label2id, epochs=5, lr=2e-5, sa
         print(f"Train loss: {avg_train_loss:.4f}")
         
         # Evaluate and get metrics
-        subset_acc, micro_acc, macro_f1, micro_f1 = evaluate(model, val_loader, label2id)
+        macro_f1, hamming, jaccard = evaluate(model, val_loader, label2id)
         
         # Save best model based on macro F1 score
-        if macro_f1 > best_macro_f1:
-            best_macro_f1 = macro_f1
+        if jaccard > best_jaccard:
+            best_jaccard = jaccard
             best_epoch = epoch + 1
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'best_macro_f1': best_macro_f1,
-                'subset_acc': subset_acc,
-                'micro_acc': micro_acc,
-                'micro_f1': micro_f1,
+                'best_jaccard': best_jaccard,
+                'macro_f1': macro_f1,
+                'hamming': hamming,
             }, best_model_path)
-            print(f"✓ Best model saved at epoch {epoch+1} with Macro F1: {macro_f1:.4f}")
+            print(f"✓ Best model saved at epoch {epoch+1} with Jaccard: {jaccard:.4f}")
     
-    print(f"\nTraining completed! Best model from epoch {best_epoch} with Macro F1: {best_macro_f1:.4f}")
+    print(f"\nTraining completed! Best model from epoch {best_epoch} with Jaccard: {best_jaccard:.4f}")
     print(f"Best model saved at: {best_model_path}")
     
     return best_model_path
@@ -98,16 +97,10 @@ def evaluate(model, val_loader, label2id, threshold=0.5):
     y_pred = np.vstack(all_preds)
 
     # === Metrics ===
-    subset_acc = (y_true == y_pred).all(axis=1).mean()  # exact match accuracy
-    macro_f1 = f1_score(y_true, y_pred, average="macro")
-    micro_f1 = f1_score(y_true, y_pred, average="micro")
+    macro_f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
+    hamming = 1 - hamming_loss(y_true, y_pred)
+    jaccard = jaccard_score(y_true, y_pred, average="samples", zero_division=0)
 
-    # Micro accuracy (Jaccard-based)
-    intersection = np.logical_and(y_true, y_pred).sum()
-    union = np.logical_or(y_true, y_pred).sum()
-    micro_acc = intersection / union if union > 0 else 0.0
+    print(f"MacroF1={macro_f1:.4f} | Hamming={hamming:.4f} | Jaccard={jaccard:.4f}")
 
-    print(f"SubsetAcc={subset_acc:.4f} | MicroAcc={micro_acc:.4f} | "
-          f"MacroF1={macro_f1:.4f} | MicroF1={micro_f1:.4f}")
-
-    return subset_acc, micro_acc, macro_f1, micro_f1
+    return macro_f1, hamming, jaccard
