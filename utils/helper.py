@@ -1,6 +1,7 @@
 import json
 import torch
 import os
+import numpy as np
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -33,46 +34,48 @@ def load_best_model(model, checkpoint_path="checkpoints/best_model.pt", device="
     
     return model, checkpoint
 
-def label_recall(pred, gt):
+def subset_recall(pred_vec, gt_vec):
     """
-    pred: list of predicted labels (strings)
-    gt:   list of groundtruth labels (strings)
-
-    Returns recall in [0,1].
+    pred_vec, gt_vec: arrays of shape [num_classes] containing 0/1
+    returns 1 or 0
     """
-    pred_set = set(pred)
-    gt_set = set(gt)
+    gt_indices = np.where(gt_vec == 1)[0]
+    for idx in gt_indices:
+        if pred_vec[idx] != 1:
+            return 0.0
+    return 1.0
 
-    if len(gt_set) == 0:
-        return 1.0
-
-    intersection = pred_set & gt_set
-    return len(intersection) / len(gt_set)
-
-def label_recall_micro(preds, gts):
-    """
-    preds: list of predicted label lists
-    gts:   list of groundtruth label lists
-
-    Micro recall = total correct / total groundtruth labels
-    """
-    total_correct = 0
-    total_gt = 0
-
-    for pred, gt in zip(preds, gts):
-        pred_set = set(pred)
-        gt_set = set(gt)
-        total_correct += len(pred_set & gt_set)
-        total_gt += len(gt_set)
-
-    if total_gt == 0:
-        return 1.0
-
-    return total_correct / total_gt
-
-
-def label_recall_macro(preds, gts):
+def subset_recall_macro(y_true, y_pred):
     scores = []
-    for pred, gt in zip(preds, gts):
-        scores.append(label_recall(pred, gt))
-    return sum(scores) / len(scores)
+    for gt, pred in zip(y_true, y_pred):
+        scores.append(subset_recall(pred, gt))
+    return np.mean(scores)
+
+import numpy as np
+
+def label_recall_vector(pred_vec, gt_vec):
+    """
+    pred_vec, gt_vec: numpy arrays of shape [num_classes], values 0/1
+    Returns recall in [0,1]
+    """
+    gt_indices = np.where(gt_vec == 1)[0]
+
+    if len(gt_indices) == 0:
+        return 1.0
+
+    correct = 0
+    for idx in gt_indices:
+        if pred_vec[idx] == 1:
+            correct += 1
+
+    return correct / len(gt_indices)
+
+def label_recall_macro(y_true, y_pred):
+    """
+    y_true: [N, C]  groundtruth multi-hot
+    y_pred: [N, C]  predicted multi-hot
+    """
+    recalls = []
+    for gt, pred in zip(y_true, y_pred):
+        recalls.append(label_recall_vector(pred, gt))
+    return np.mean(recalls)
