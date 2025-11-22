@@ -50,8 +50,6 @@ def subset_recall_macro(y_true, y_pred):
         scores.append(subset_recall(pred, gt))
     return np.mean(scores)
 
-import numpy as np
-
 def label_recall_vector(pred_vec, gt_vec):
     """
     pred_vec, gt_vec: numpy arrays of shape [num_classes], values 0/1
