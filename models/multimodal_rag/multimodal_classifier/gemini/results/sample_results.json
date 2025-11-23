@@ -1,0 +1,91 @@
+[
+    {
+        "questionId": 49153,
+        "question": "What is the ‘actual’ value per 1000, during the year 1975?",
+        "image": "data\\spdocvqa_images\\pybv0228_81.png",
+        "predicted_json": {
+            "predicted_labels": [
+                "figure/diagram"
+            ],
+            "scores": {
+                "handwritten": 0.0,
+                "form": 0.0,
+                "layout": 0.0,
+                "table/list": 0.0,
+                "others": 0.0,
+                "free_text": 0.0,
+                "Image/Photo": 0.0,
+                "figure/diagram": 1.0,
+                "Yes/No": 0.0
+            },
+            "rationale": "The question asks for a value from a graph, which is a type of figure or diagram."
+        },
+        "predicted_labels": [
+            "figure/diagram"
+        ],
+        "ground_truth": [
+            "figure/diagram"
+        ],
+        "timestamp": "2025-11-22T11:11:34.151701"
+    },
+    {
+        "questionId": 24580,
+        "question": "What is name of university?",
+        "image": "data\\spdocvqa_images\\nkbl0226_1.png",
+        "predicted_json": {
+            "predicted_labels": [
+                "handwritten",
+                "others"
+            ],
+            "scores": {
+                "handwritten": 1.0,
+                "form": 0.0,
+                "layout": 0.0,
+                "table/list": 0.0,
+                "others": 0.8,
+                "free_text": 0.0,
+                "Image/Photo": 0.0,
+                "figure/diagram": 0.0,
+                "Yes/No": 0.0
+            },
+            "rationale": "The question asks for the name of a university, which is a piece of text, but the specific context implies it's written, hence handwritten is highly relevant."
+        },
+        "predicted_labels": [
+            "handwritten",
+            "others"
+        ],
+        "ground_truth": [
+            "others"
+        ],
+        "timestamp": "2025-11-22T11:11:41.339604"
+    },
+    {
+        "questionId": 57349,
+        "question": "What is the name of the company?",
+        "image": "data\\spdocvqa_images\\snbx0223_22.png",
+        "predicted_json": {
+            "predicted_labels": [
+                "layout"
+            ],
+            "scores": {
+                "handwritten": 0.0,
+                "form": 0.0,
+                "layout": 1.0,
+                "table/list": 0.0,
+                "others": 0.0,
+                "free_text": 0.0,
+                "Image/Photo": 0.0,
+                "figure/diagram": 0.0,
+                "Yes/No": 0.0
+            },
+            "rationale": "The question asks for the name of the company, which is a structural element of the document, thus classified as layout."
+        },
+        "predicted_labels": [
+            "layout"
+        ],
+        "ground_truth": [
+            "layout"
+        ],
+        "timestamp": "2025-11-22T11:11:49.708961"
+    }
+]
