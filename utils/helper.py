@@ -51,28 +51,11 @@ def subset_recall_macro(y_true, y_pred):
     return np.mean(scores)
 
 def label_recall_vector(pred_vec, gt_vec):
-    """
-    pred_vec, gt_vec: numpy arrays of shape [num_classes], values 0/1
-    Returns recall in [0,1]
-    """
-    gt_indices = np.where(gt_vec == 1)[0]
-
-    if len(gt_indices) == 0:
+    gt_idx = np.where(gt_vec == 1)[0]
+    if len(gt_idx) == 0:
         return 1.0
+    correct = sum(pred_vec[i] == 1 for i in gt_idx)
+    return correct / len(gt_idx)
 
-    correct = 0
-    for idx in gt_indices:
-        if pred_vec[idx] == 1:
-            correct += 1
-
-    return correct / len(gt_indices)
-
-def label_recall_macro(y_true, y_pred):
-    """
-    y_true: [N, C]  groundtruth multi-hot
-    y_pred: [N, C]  predicted multi-hot
-    """
-    recalls = []
-    for gt, pred in zip(y_true, y_pred):
-        recalls.append(label_recall_vector(pred, gt))
-    return np.mean(recalls)
+def label_recall_macro(Y_true, Y_pred):
+    return np.mean([label_recall_vector(p, g) for p, g in zip(Y_pred, Y_true)])
