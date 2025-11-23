@@ -15,7 +15,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_NAME = "gemini-2.5-flash-lite"
 IMAGE_FOLDER = Path("data/spdocvqa_images")
 DATA_PATH = Path("data/spdocvqa_qas/val_v1.0_withQT.json")
-OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results.json")
+OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results_1000.json")
+# OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results_2000.json")
+# OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results_3000.json")
+# OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results_4000.json")
+# OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results_5000.json")
+# OUTPUT_PATH = Path("models/multimodal_rag/multimodal_classifier/gemini/results/zeroshot_results_remainder.json")
+
 
 # Rate limits (adjust to your tier)
 MAX_RPM = 15
@@ -65,7 +71,7 @@ token_bucket = 0
 minute_window_start = time.time()
 request_count = 0
 
-for i in range(start_idx, min(total_samples, 1000)):  # limit if needed
+for i in range(start_idx, 1000):  # limit if needed
     if request_count >= MAX_RPD:
         print(f"Daily limit reached ({MAX_RPD} requests). Stopping.")
         break
