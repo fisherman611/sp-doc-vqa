@@ -208,3 +208,4 @@ marimo/_lsp/
 __marimo__/
 /data
 spdocvqa_images.tar.gz
+/models/multimodal_rag/multimodal_classifier/gemini/results
