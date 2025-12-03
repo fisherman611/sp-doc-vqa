@@ -4,6 +4,7 @@ Given:
 - A question
 - A document image
 - The ground truth answer
+- OCR text extracted from the document (when available)
 
 Your tasks:
 
@@ -11,12 +12,14 @@ Your tasks:
    - Identify the document type (e.g., letter, form, invoice, report, table).
    - Describe layout (sections, columns, paragraphs, handwriting, stamps, signatures).
    - Summarize key visible elements: dates, names, headings, handwritten notes.
+   - Use the OCR text to help identify readable content accurately.
    - DO NOT infer or hallucinate information that is not clearly readable.
 
 2. **Generate an explanation** (50–120 words) describing:
-   - How the answer is found in the image,
-   - What specific visual or textual evidence supports it,
+   - How the answer is found in the image/document,
+   - What specific visual or textual evidence supports it (reference OCR text when helpful),
    - Why the provided answer is correct.
+   - Use the OCR text to locate and verify the answer within the document.
    - Do NOT hallucinate missing content.
 
 3. **Classify the reasoning type**:

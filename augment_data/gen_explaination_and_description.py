@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
+from tqdm.auto import tqdm
 
 # ==========================
 # CONFIG
@@ -15,15 +16,19 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_NAME = "gemini-2.5-flash-lite"
 
+# Dataset selection - change to use train or val
+DATASET_SPLIT = "train"  # "train" or "val"
+
 IMAGE_FOLDER = Path("data/spdocvqa_images")
-DATA_PATH = Path("data/spdocvqa_qas/train_v1.0_withQT.json")
-OUTPUT_PATH = Path("data/augmented_data/gemini_augmented_descriptions_explanations.json")
+DATA_PATH = Path(f"data/spdocvqa_qas/{DATASET_SPLIT}_v1.0_withQT_ocr.json")
+OCR_FOLDER = Path("data/spdocvqa_ocr")
+OUTPUT_PATH = Path(f"data/augmented_data/gemini_augmented_{DATASET_SPLIT}_descriptions_explanations.json")
 
 # Rate limits
 MAX_RPM = 15
 MAX_RPD = 1000
 MAX_TPM = 1_000_000
-AVG_TOKENS_PER_CALL = 800  # Higher since we're generating more content
+AVG_TOKENS_PER_CALL = 1200  # Higher since we're including OCR text + generating more content
 SLEEP_BETWEEN_CALLS = 60.0 / MAX_RPM
 
 # Load system prompt
@@ -70,6 +75,34 @@ def clean_json_output(text: str):
         return {}
 
 
+def load_ocr_text(ocr_filename: str, ocr_folder: Path) -> str:
+    """Load and extract text from OCR JSON file."""
+    if not ocr_filename:
+        return ""
+    
+    ocr_path = ocr_folder / ocr_filename
+    if not ocr_path.exists():
+        return ""
+    
+    try:
+        with open(ocr_path, 'r', encoding='utf-8') as f:
+            ocr_data = json.load(f)
+        
+        # Extract text from OCR data
+        text_lines = []
+        if "recognitionResults" in ocr_data:
+            for result in ocr_data["recognitionResults"]:
+                if "lines" in result:
+                    for line in result["lines"]:
+                        if "text" in line:
+                            text_lines.append(line["text"])
+        
+        return "\n".join(text_lines)
+    except Exception as e:
+        print(f"  ⚠ Error loading OCR file {ocr_filename}: {e}")
+        return ""
+
+
 # ==========================
 # LOAD DATA
 # ==========================
@@ -91,7 +124,7 @@ request_count = 0
 # ==========================
 # PROCESS SAMPLES
 # ==========================
-for i in range(min(total_samples, 1000)):  # Limit if needed
+for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
     if request_count >= MAX_RPD:
         print(f"Daily limit reached ({MAX_RPD}). Stopping.")
         break
@@ -119,22 +152,40 @@ for i in range(min(total_samples, 1000)):  # Limit if needed
     question = sample.get("question", "")
     answers = sample.get("answers", [""])
     answer = answers[0] if answers else ""
+    ocr_filename = sample.get("ocr", "")
 
     print(f"\n[{i+1}/{total_samples}] Processing: {image_path.name}")
     print(f"  Question: {question[:60]}...")
     print(f"  Answer: {answer}")
 
+    # Load OCR text
+    ocr_text = load_ocr_text(ocr_filename, OCR_FOLDER)
+    if ocr_text:
+        print(f"  OCR loaded: {len(ocr_text)} chars")
+    else:
+        print(f"  ⚠ No OCR available")
+
     image_part = load_image_as_part(image_path)
 
     # --- GENERATE COMBINED OUTPUT ---
+    # Build the content list
+    content_parts = [
+        {"text": f"Question: {question}"},
+        {"text": f"Ground truth answer: {answer}"}
+    ]
+    
+    # Add OCR text if available
+    if ocr_text:
+        content_parts.append({"text": f"OCR text from document:\n{ocr_text}"})
+    
+    content_parts.extend([
+        {"text": "Document image:"},
+        image_part
+    ])
+    
     try:
         response = model.generate_content(
-            [
-                {"text": f"Question: {question}"},
-                {"text": f"Ground truth answer: {answer}"},
-                {"text": "Document image:"},
-                image_part
-            ],
+            content_parts,
             request_options={"timeout": 180}
         )
 
@@ -165,6 +216,7 @@ for i in range(min(total_samples, 1000)):  # Limit if needed
         "docId": sample.get("docId"),
         "ucsf_document_id": sample.get("ucsf_document_id"),
         "ucsf_document_page_no": sample.get("ucsf_document_page_no"),
+        "ocr": ocr_filename,
         "answers": answers,
         "image_description": image_description,
         "answer_explanation": answer_explanation,
