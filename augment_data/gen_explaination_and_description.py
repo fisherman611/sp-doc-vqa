@@ -12,12 +12,14 @@ from tqdm.auto import tqdm
 # CONFIG
 # ==========================
 load_dotenv()
+with open("augment_data/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = "gemini-2.5-flash-lite"
+MODEL_NAME = config["model_name"]
 
 # Dataset selection - change to use train or val
-DATASET_SPLIT = "train"  # "train" or "val"
+DATASET_SPLIT = config["dataset_split"]  # "train" or "val"
 
 IMAGE_FOLDER = Path("data/spdocvqa_images")
 DATA_PATH = Path(f"data/spdocvqa_qas/{DATASET_SPLIT}_v1.0_withQT_ocr.json")
@@ -25,10 +27,10 @@ OCR_FOLDER = Path("data/spdocvqa_ocr")
 OUTPUT_PATH = Path(f"data/augmented_data/gemini_augmented_{DATASET_SPLIT}_descriptions_explanations.json")
 
 # Rate limits
-MAX_RPM = 15
-MAX_RPD = 1000
-MAX_TPM = 1_000_000
-AVG_TOKENS_PER_CALL = 1200  # Higher since we're including OCR text + generating more content
+MAX_RPM = config["max_rpm"]
+MAX_RPD = config["max_rpd"]
+MAX_TPM = config["max_tpm"]
+AVG_TOKENS_PER_CALL = config["avg_tokens_per_call"]  # Higher since we're including OCR text + generating more content
 SLEEP_BETWEEN_CALLS = 60.0 / MAX_RPM
 
 # Load system prompt
@@ -70,7 +72,7 @@ def clean_json_output(text: str):
     try:
         return json.loads(cleaned)
     except Exception as e:
-        print(f"⚠ JSON parse failed: {e}")
+        print(f"JSON parse failed: {e}")
         print(f"Raw text: {cleaned[:200]}...")
         return {}
 
@@ -99,7 +101,7 @@ def load_ocr_text(ocr_filename: str, ocr_folder: Path) -> str:
         
         return "\n".join(text_lines)
     except Exception as e:
-        print(f"  ⚠ Error loading OCR file {ocr_filename}: {e}")
+        print(f"Error loading OCR file {ocr_filename}: {e}")
         return ""
 
 
@@ -155,15 +157,15 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
     ocr_filename = sample.get("ocr", "")
 
     print(f"\n[{i+1}/{total_samples}] Processing: {image_path.name}")
-    print(f"  Question: {question[:60]}...")
-    print(f"  Answer: {answer}")
+    print(f"Question: {question[:60]}...")
+    print(f"Answer: {answer}")
 
     # Load OCR text
     ocr_text = load_ocr_text(ocr_filename, OCR_FOLDER)
     if ocr_text:
-        print(f"  OCR loaded: {len(ocr_text)} chars")
+        print(f"OCR loaded: {len(ocr_text)} chars")
     else:
-        print(f"  ⚠ No OCR available")
+        print(f"No OCR available")
 
     image_part = load_image_as_part(image_path)
 
@@ -199,10 +201,10 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
         token_bucket += AVG_TOKENS_PER_CALL
         request_count += 1
 
-        print(f"  ✓ Generated: {len(image_description)} chars (desc), {len(answer_explanation)} chars (expl)")
+        print(f"Generated: {len(image_description)} chars (desc), {len(answer_explanation)} chars (expl)")
 
     except Exception as e:
-        print(f"  ✗ Error processing sample {i}: {e}")
+        print(f"Error processing sample {i}: {e}")
         image_description = ""
         answer_explanation = ""
         reasoning_type = ""
@@ -227,7 +229,7 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
     if (i + 1) % 1 == 0 or i == total_samples - 1:
         with open(OUTPUT_PATH, "w", encoding="utf-8") as f_out:
             json.dump(results, f_out, ensure_ascii=False, indent=4)
-        print(f"  💾 Saved progress ({i+1}/{total_samples}).")
+        print(f"Saved progress ({i+1}/{total_samples}).")
 
     time.sleep(SLEEP_BETWEEN_CALLS)
 
@@ -235,7 +237,7 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
 # ==========================
 # DONE
 # ==========================
-print(f"\n✓ Completed {len(results)} samples.")
-print(f"✓ Results saved to: {OUTPUT_PATH}")
-print(f"✓ Total API calls: {request_count}")
+print(f"\nCompleted {len(results)} samples.")
+print(f"Results saved to: {OUTPUT_PATH}")
+print(f"Total API calls: {request_count}")
 
