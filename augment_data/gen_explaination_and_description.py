@@ -163,11 +163,12 @@ for i in range(min(total_samples, 1000)):  # Limit if needed
         "question_types": sample.get("question_types"),
         "image": str(image_path),
         "docId": sample.get("docId"),
+        "ucsf_document_id": sample.get("ucsf_document_id"),
+        "ucsf_document_page_no": sample.get("ucsf_document_page_no"),
         "answers": answers,
         "image_description": image_description,
         "answer_explanation": answer_explanation,
-        "reasoning_type": reasoning_type,
-        "timestamp": datetime.now().isoformat()
+        "reasoning_type": reasoning_type
     })
 
     # Save intermediate progress (every sample)
