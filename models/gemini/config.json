@@ -2,7 +2,7 @@
     "model_name": "gemini-2.5-flash",
     "image_folder": "data/spdocvqa_images",
     "data_path": "data/spdocvqa_qas/val_v1.0_withQT.json",
-    "output_path": "outputs/gemini_vqa_results.json",
+    "output_path": "results/gemini_vqa_results.json",
     "max_rpm": 10,
     "max_rpd": 250,
     "max_tpm": 250000,
