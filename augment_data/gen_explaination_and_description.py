@@ -78,7 +78,17 @@ def clean_json_output(text: str):
 
 
 def load_ocr_info(ocr_filename: str, ocr_folder: Path) -> dict:
-    """Load and extract text, words, and bounding boxes from OCR JSON file."""
+    """
+    Load and extract text, words, and bounding boxes from OCR JSON file.
+    
+    This OCR data is crucial for generating accurate image descriptions as it provides:
+    - Readable text content from the document
+    - Spatial information (bounding boxes) for locating text
+    - Word-level details for precise referencing
+    
+    Returns:
+        dict with 'text' (full text) and 'lines' (structured data with bounding boxes)
+    """
     if not ocr_filename:
         return {"text": "", "lines": []}
     
@@ -124,6 +134,32 @@ def load_ocr_info(ocr_filename: str, ocr_folder: Path) -> dict:
     except Exception as e:
         print(f"Error loading OCR file {ocr_filename}: {e}")
         return {"text": "", "lines": []}
+
+
+def format_ocr_for_prompt(ocr_info: dict) -> str:
+    """Format OCR data with text and bounding boxes for the prompt."""
+    if not ocr_info["text"]:
+        return ""
+    
+    ocr_formatted = "OCR text from document (with bounding boxes):\n\n"
+    for idx, line_info in enumerate(ocr_info["lines"], 1):
+        ocr_formatted += f"Line {idx}: \"{line_info['text']}\"\n"
+        if line_info.get("boundingBox"):
+            bbox = line_info["boundingBox"]
+            ocr_formatted += f"  Bounding box: [{','.join(map(str, bbox))}]\n"
+        
+        # Include word-level bounding boxes if available
+        if line_info.get("words"):
+            ocr_formatted += "  Words:\n"
+            for word_info in line_info["words"]:
+                ocr_formatted += f"    - \"{word_info['text']}\""
+                if word_info.get("boundingBox"):
+                    bbox = word_info["boundingBox"]
+                    ocr_formatted += f" [{','.join(map(str, bbox))}]"
+                ocr_formatted += "\n"
+        ocr_formatted += "\n"
+    
+    return ocr_formatted
 
 
 # ==========================
@@ -183,10 +219,12 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
 
     # Load OCR info (text + bounding boxes)
     ocr_info = load_ocr_info(ocr_filename, OCR_FOLDER)
-    if ocr_info["text"]:
+    ocr_available = bool(ocr_info["text"])
+    
+    if ocr_available:
         print(f"OCR loaded: {len(ocr_info['text'])} chars, {len(ocr_info['lines'])} lines")
     else:
-        print(f"No OCR available")
+        print(f"No OCR available - using vision only")
 
     image_part = load_image_as_part(image_path)
 
@@ -198,27 +236,11 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
     ]
     
     # Add OCR text with bounding boxes if available
-    if ocr_info["text"]:
-        # Format OCR data with text and bounding boxes
-        ocr_formatted = "OCR text from document (with bounding boxes):\n\n"
-        for idx, line_info in enumerate(ocr_info["lines"], 1):
-            ocr_formatted += f"Line {idx}: \"{line_info['text']}\"\n"
-            if line_info.get("boundingBox"):
-                bbox = line_info["boundingBox"]
-                ocr_formatted += f"  Bounding box: [{','.join(map(str, bbox))}]\n"
-            
-            # Include word-level bounding boxes if available
-            if line_info.get("words"):
-                ocr_formatted += "  Words:\n"
-                for word_info in line_info["words"]:
-                    ocr_formatted += f"    - \"{word_info['text']}\""
-                    if word_info.get("boundingBox"):
-                        bbox = word_info["boundingBox"]
-                        ocr_formatted += f" [{','.join(map(str, bbox))}]"
-                    ocr_formatted += "\n"
-            ocr_formatted += "\n"
-        
+    # This helps the model generate more accurate image descriptions
+    if ocr_available:
+        ocr_formatted = format_ocr_for_prompt(ocr_info)
         content_parts.append({"text": ocr_formatted})
+        print(f"OCR data included in prompt ({len(ocr_formatted)} chars)")
     
     content_parts.extend([
         {"text": "Document image:"},
@@ -241,7 +263,9 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
         token_bucket += AVG_TOKENS_PER_CALL
         request_count += 1
 
-        print(f"Generated: {len(image_description)} chars (desc), {len(answer_explanation)} chars (expl)")
+        print(f"Generated: {len(image_description)} chars (desc), {len(answer_explanation)} chars (expl), reasoning: {reasoning_type}")
+        if ocr_available and image_description:
+            print(f"Description preview: {image_description[:100]}...")
 
     except Exception as e:
         print(f"Error processing sample {i}: {e}")
