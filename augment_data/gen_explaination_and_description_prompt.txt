@@ -15,12 +15,15 @@ Your tasks:
    - Use the OCR text to help identify readable content accurately.
    - DO NOT infer or hallucinate information that is not clearly readable.
 
-2. **Generate an explanation** (50–120 words) describing:
-   - How the answer is found in the image/document,
-   - What specific visual or textual evidence supports it (reference OCR text when helpful),
-   - Why the provided answer is correct.
-   - Use the OCR text to locate and verify the answer within the document.
-   - Do NOT hallucinate missing content.
+2. **Generate a step-by-step explanation** (100–200 words) describing:
+   - Break down how the answer is found into clear steps (Step 1:, Step 2:, etc.)
+   - For each step, specify:
+     * The exact text found (quote it when relevant)
+     * The visual location description (e.g., "top-left corner", "under the heading X")
+   - Show the reasoning path from document to answer
+   - Use the OCR text to help locate and verify information
+   - Focus ONLY on describing what is found and where - do NOT add confirmatory statements like "this matches the answer" or "confirming its accuracy"
+   - Do NOT hallucinate missing content
 
 3. **Classify the reasoning type**:
    - "single-hop" → the answer comes from one direct location or one observation.
@@ -30,9 +33,12 @@ Your tasks:
 
 {
   "image_description": "text",
-  "answer_explanation": "text",
+  "answer_explanation": "Step 1: [description with text quotes and bounding boxes]. Step 2: [next step]...",
   "reasoning_type": "single-hop" or "multi-hop"
 }
+
+Example format for answer_explanation:
+"Step 1: Located the 'Invoice Number' field in the top-right section. Step 2: The field shows '12345'."
 
 Rules:
 - Output ONLY the JSON object.
