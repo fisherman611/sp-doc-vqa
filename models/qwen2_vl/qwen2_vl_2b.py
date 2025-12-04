@@ -1,4 +1,6 @@
 import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import torch
 from PIL import Image
 from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
@@ -13,14 +15,17 @@ load_dotenv()
 from huggingface_hub import login
 login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
-MODEL_NAME = "Qwen/Qwen2-VL-2B-Instruct"
-DATA_PATH = Path("data/spdocvqa_qas/val_v1.0_withQT.json")
-IMAGE_FOLDER = Path("data/spdocvqa_images")
-OUTPUT_PATH = Path("outputs/qwen_vl_results.json")
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-START_IDX = 0
+with open("models/qwen2_vl/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
 
-with open("models/qwen/system_prompt.txt", "r", encoding="utf-8") as f:
+MODEL_NAME = config["model_name"]
+DATA_PATH = Path(config["data_path"])
+IMAGE_FOLDER = Path(config["image_folder"])
+OUTPUT_PATH = Path(config["output_path"])
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+START_IDX = config["start_idx"]
+
+with open("models/qwen2_vl/system_prompt.txt", "r", encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read().strip()
 
 print(f"Running on device: {DEVICE}")
@@ -29,9 +34,12 @@ print(f"Loading {MODEL_NAME} and processor...")
 
 model = Qwen2VLForConditionalGeneration.from_pretrained(
     MODEL_NAME, 
-    torch_dtype="auto", 
+    torch_dtype=torch.float16, 
     device_map="auto"
 ).eval()
+
+if hasattr(model, "generation_config"):
+    model.generation_config.use_cache = False
 
 processor = AutoProcessor.from_pretrained(MODEL_NAME)
 
@@ -45,7 +53,7 @@ results = []
 total_samples = len(data["data"])
 print(f"Starting DocVQA inference on {total_samples} samples...")
 
-for i in range(START_IDX, min(total_samples, 1000)):
+for i in range(START_IDX, min(total_samples, 10)):
     sample = data["data"][i]
     image_path = IMAGE_FOLDER / Path(sample["image"]).name
     question = sample["question"]
@@ -56,7 +64,9 @@ for i in range(START_IDX, min(total_samples, 1000)):
 
     print(f"\n[{i+1}] Processing: {image_path.name}")
 
-    image = Image.open(image_path)
+    image = Image.open(image_path).convert("RGB")
+    max_side = 1024  # try 768 if you still get OOM
+    image.thumbnail((max_side, max_side), Image.LANCZOS)
     
     messages = [
         {"role": "system", "content": [{"type": "text", "text": SYSTEM_PROMPT}]},
@@ -80,7 +90,7 @@ for i in range(START_IDX, min(total_samples, 1000)):
     ).to(DEVICE)
     try:
         with torch.no_grad():
-            generated_ids = model.generate(**inputs, max_new_tokens=518, temperature=0.0)
+            generated_ids = model.generate(**inputs, max_new_tokens=128, temperature=0.3)
             trimmed_ids = [
                 out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
             ]
