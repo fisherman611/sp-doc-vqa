@@ -9,18 +9,21 @@ import google.generativeai as genai
 
 load_dotenv()
 
+with open("models/gemini/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = "gemini-2.5-flash-lite"
-IMAGE_FOLDER = Path("data/spdocvqa_images")
-DATA_PATH = Path("data/spdocvqa_qas/val_v1.0_withQT.json")
-OUTPUT_PATH = Path("outputs/gemini_vqa_results.json")
+MODEL_NAME = config["model_name"]
+IMAGE_FOLDER = Path(config["image_folder"])
+DATA_PATH = Path(config["data_path"])
+OUTPUT_PATH = Path(config["output_path"])
 
 # --- API limits (adjust to your quota) ---
-MAX_RPM = 15  # requests per minute
-MAX_RPD = 1000  # requests per day
-MAX_TPM = 1_000_000  # tokens per minute (example; adapt to your tier)
+MAX_RPM = config["max_rpm"]  # requests per minute
+MAX_RPD = config["max_rpd"]  # requests per day
+MAX_TPM = config["max_tpm"] # tokens per minute (example; adapt to your tier)
 
-AVG_TOKENS_PER_CALL = 500
+AVG_TOKENS_PER_CALL = config["avg_tokens_per_call"]
 
 SLEEP_BETWEEN_CALLS = 60.0 / MAX_RPM  # seconds between requests
 
@@ -84,6 +87,10 @@ for i in range(start_idx, min(total_samples, 1000)):
     except Exception as e:
         print(f"Error on sample {i}: {e}")
         pred_answer = ""
+        
+    print("\nQuestion:", question)
+    print("Image:", image_path)
+    print(f"Model Answer: {pred_answer}\n")
 
     results.append(
         {
