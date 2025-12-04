@@ -21,9 +21,11 @@ Your tasks:
    - Break down how the answer is found into clear steps (Step 1:, Step 2:, etc.)
    - For each step, specify:
      * The exact text found (quote it when relevant)
+     * The bounding box coordinates for the text (use format [x1,y1,x2,y2,x3,y3,x4,y4] from the OCR data)
      * The visual location description (e.g., "top-left corner", "under the heading X")
    - Show the reasoning path from document to answer
-   - Use the OCR text to help locate and verify information
+   - Use the OCR text and bounding boxes to help locate and verify information
+   - When referencing text from the document, include its bounding box if available
    - Focus ONLY on describing what is found and where - do NOT add confirmatory statements like "this matches the answer" or "confirming its accuracy"
    - Do NOT hallucinate missing content
 
@@ -40,7 +42,7 @@ Your tasks:
 }
 
 Example format for answer_explanation:
-"Step 1: Located the 'Invoice Number' field in the top-right section. Step 2: The field shows '12345'."
+"Step 1: Located the 'Invoice Number' field in the top-right section with bounding box [1200,50,1400,50,1400,80,1200,80]. Step 2: The field shows '12345' with bounding box [1420,50,1520,50,1520,80,1420,80]."
 
 Rules:
 - Output ONLY the JSON object.

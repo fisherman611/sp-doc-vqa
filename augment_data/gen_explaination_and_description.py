@@ -77,32 +77,53 @@ def clean_json_output(text: str):
         return {}
 
 
-def load_ocr_text(ocr_filename: str, ocr_folder: Path) -> str:
-    """Load and extract text from OCR JSON file."""
+def load_ocr_info(ocr_filename: str, ocr_folder: Path) -> dict:
+    """Load and extract text, words, and bounding boxes from OCR JSON file."""
     if not ocr_filename:
-        return ""
+        return {"text": "", "lines": []}
     
     ocr_path = ocr_folder / ocr_filename
     if not ocr_path.exists():
-        return ""
+        return {"text": "", "lines": []}
     
     try:
         with open(ocr_path, 'r', encoding='utf-8') as f:
             ocr_data = json.load(f)
         
-        # Extract text from OCR data
+        # Extract text and bounding boxes from OCR data
         text_lines = []
+        structured_lines = []
+        
         if "recognitionResults" in ocr_data:
             for result in ocr_data["recognitionResults"]:
                 if "lines" in result:
                     for line in result["lines"]:
                         if "text" in line:
+                            line_info = {
+                                "text": line["text"],
+                                "boundingBox": line.get("boundingBox", [])
+                            }
+                            
+                            # Extract words with their bounding boxes if available
+                            words = []
+                            if "words" in line:
+                                for word in line["words"]:
+                                    words.append({
+                                        "text": word.get("text", ""),
+                                        "boundingBox": word.get("boundingBox", [])
+                                    })
+                            line_info["words"] = words
+                            
+                            structured_lines.append(line_info)
                             text_lines.append(line["text"])
         
-        return "\n".join(text_lines)
+        return {
+            "text": "\n".join(text_lines),
+            "lines": structured_lines
+        }
     except Exception as e:
         print(f"Error loading OCR file {ocr_filename}: {e}")
-        return ""
+        return {"text": "", "lines": []}
 
 
 # ==========================
@@ -160,10 +181,10 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
     print(f"Question: {question[:60]}...")
     print(f"Answer: {answer}")
 
-    # Load OCR text
-    ocr_text = load_ocr_text(ocr_filename, OCR_FOLDER)
-    if ocr_text:
-        print(f"OCR loaded: {len(ocr_text)} chars")
+    # Load OCR info (text + bounding boxes)
+    ocr_info = load_ocr_info(ocr_filename, OCR_FOLDER)
+    if ocr_info["text"]:
+        print(f"OCR loaded: {len(ocr_info['text'])} chars, {len(ocr_info['lines'])} lines")
     else:
         print(f"No OCR available")
 
@@ -176,9 +197,28 @@ for i in tqdm(range(min(total_samples, 10))):  # Limit if needed
         {"text": f"Ground truth answer: {answer}"}
     ]
     
-    # Add OCR text if available
-    if ocr_text:
-        content_parts.append({"text": f"OCR text from document:\n{ocr_text}"})
+    # Add OCR text with bounding boxes if available
+    if ocr_info["text"]:
+        # Format OCR data with text and bounding boxes
+        ocr_formatted = "OCR text from document (with bounding boxes):\n\n"
+        for idx, line_info in enumerate(ocr_info["lines"], 1):
+            ocr_formatted += f"Line {idx}: \"{line_info['text']}\"\n"
+            if line_info.get("boundingBox"):
+                bbox = line_info["boundingBox"]
+                ocr_formatted += f"  Bounding box: [{','.join(map(str, bbox))}]\n"
+            
+            # Include word-level bounding boxes if available
+            if line_info.get("words"):
+                ocr_formatted += "  Words:\n"
+                for word_info in line_info["words"]:
+                    ocr_formatted += f"    - \"{word_info['text']}\""
+                    if word_info.get("boundingBox"):
+                        bbox = word_info["boundingBox"]
+                        ocr_formatted += f" [{','.join(map(str, bbox))}]"
+                    ocr_formatted += "\n"
+            ocr_formatted += "\n"
+        
+        content_parts.append({"text": ocr_formatted})
     
     content_parts.extend([
         {"text": "Document image:"},
