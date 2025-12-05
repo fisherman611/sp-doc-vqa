@@ -12,7 +12,9 @@ import os
 import numpy as np
 import re
 from PIL import Image
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+import string
+from collections import defaultdict, Counter
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -252,3 +254,22 @@ def build_query_template(
     block.append("")  # model will generate here
 
     return "\n".join(block)
+
+def extract_final_answer(text: str) -> str:
+    m = re.search(r"\[FINAL ANSWER\](.*)", text, flags=re.DOTALL|re.IGNORECASE)
+    if not m:
+        return text.strip()
+    
+    tail = m.group(1).strip()
+    lines = [ln.strip() for ln in tail.splitlines() if ln.strip()]
+    return lines[0] if lines else tail
+
+def normalize_answer(ans: str) -> str:
+    ans = ans.strip().lower()
+    ans = ans.translate(str.maketrans("", "", string.punctuation))
+    ans = " ".join(ans.split())
+    return ans
+
+def majority_vote(answers: List[str]) -> Tuple[str, Dict[str, int]]:
+    counter = Counter(answers)
+    return max(counter.keys(), key=lambda x: counter.get(x))
