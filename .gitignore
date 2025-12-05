@@ -210,3 +210,5 @@ __marimo__/
 spdocvqa_images.tar.gz
 /models/multimodal_retrieval_cot/multimodal_classifier/gemini/results
 /results
+results.md
+test.py
