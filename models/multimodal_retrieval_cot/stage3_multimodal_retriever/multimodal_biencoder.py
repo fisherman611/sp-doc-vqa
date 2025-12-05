@@ -23,15 +23,22 @@ load_dotenv()
 from huggingface_hub import login
 login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
+with open("models/multimodal_retrieval_cot/stage3_multimodal_retriever/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+    
+TEXT_MODEL = config["text_model_embedding"]
+IMAGE_MODEL = config["image_model_embedding"]
+PROJ_DIM = config["proj_dim"]
+
 class MultimodalBiEncoder:
     """
     Multimodal Bi-encoder for (image, question, image_description)
     """
     def __init__(
         self,
-        text_model_name: str ="sentence-transformers/all-mpnet-base-v2",
-        image_model_name: str ="openai/clip-vit-base-patch32",
-        proj_dim: int=768,
+        text_model_name: str =TEXT_MODEL,
+        image_model_name: str =IMAGE_MODEL,
+        proj_dim: int=PROJ_DIM,
         device: str=None
     ) -> None:
         super().__init__()

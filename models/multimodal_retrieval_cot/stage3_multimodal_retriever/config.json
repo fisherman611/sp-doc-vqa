@@ -1,0 +1,8 @@
+{
+    "text_model_embedding": "sentence-transformers/all-mpnet-base-v2",
+    "image_model_embedding": "openai/clip-vit-base-patch32",
+    "proj_dim": 768, 
+    "batch_size": 8,
+    "top_k": 5,
+    "rerank_model": "Salesforce/blip2-itm-vit-g-coco"
+}

@@ -26,6 +26,12 @@ load_dotenv()
 from huggingface_hub import login
 login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
+with open("models/multimodal_retrieval_cot/stage3_multimodal_retriever/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+
+TOP_K = config["top_k"]
+BATCH_SIZE = config["batch_size"]
+
 class MultimodalRetriever:
     """
     Full pipeline:
@@ -55,7 +61,7 @@ class MultimodalRetriever:
     def build_index(
         self,
         examples: List[Dict],
-        batch_size: int = 32,
+        batch_size: int = BATCH_SIZE,
         use_gpu: bool = False,
     ) -> None:
         """
@@ -117,7 +123,7 @@ class MultimodalRetriever:
     def retrieve(
         self,
         query_example: Dict,
-        top_k: int = 10,
+        top_k: int = TOP_K,
     ) -> List[Dict]:
         """
         Retrieve top-k most similar examples using FAISS.

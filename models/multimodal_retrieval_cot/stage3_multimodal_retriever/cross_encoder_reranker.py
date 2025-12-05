@@ -22,6 +22,12 @@ load_dotenv()
 from huggingface_hub import login
 login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
+with open("models/multimodal_retrieval_cot/stage3_multimodal_retriever/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+    
+RERANK_MODEL = config["rerank_model"]
+BATCH_SIZE = config["batch_size"]
+
 class CrossEncoderReranker(nn.Module):
     """
     Cross-encoder reranker using BLIP-2 + Q-Former
@@ -33,7 +39,7 @@ class CrossEncoderReranker(nn.Module):
 
     def __init__(
         self,
-        model_name: str = "Salesforce/blip2-itm-vit-g-coco",
+        model_name: str = RERANK_MODEL,
         device: str = None,
         fp16: bool = False,
     ) -> None:
@@ -96,7 +102,7 @@ class CrossEncoderReranker(nn.Module):
         self,
         query_example: Dict,
         candidate_examples: List[Dict],
-        batch_size: int = 8,
+        batch_size: int = BATCH_SIZE,
     ) -> List[float]:
         """
         Compute BLIP-2 ITM scores for all candidates, conditioned on query_example.
@@ -145,7 +151,7 @@ class CrossEncoderReranker(nn.Module):
         self,
         query_example: Dict,
         candidate_examples: List[Dict],
-        batch_size: int = 8,
+        batch_size: int = BATCH_SIZE,
     ) -> List[Tuple[Dict, float]]:
         """
         Rerank candidate_examples by relevance to query_example.
