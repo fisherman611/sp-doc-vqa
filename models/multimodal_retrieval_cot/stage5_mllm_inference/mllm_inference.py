@@ -9,6 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.append(PROJECT_ROOT / "utils")
+sys.path.append(PROJECT_ROOT / "models/multimodal_retrieval_cot/stage4_cot_builder")
 
 import torch
 from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
@@ -19,7 +20,7 @@ import json
 from typing import List, Dict, Any, Optional
 from utils.helper import extract_final_answer, normalize_answer, majority_vote
 from dotenv import load_dotenv
-from stage4_cot_builder.cot_prompt_builder import *
+from models.multimodal_retrieval_cot.stage4_cot_builder.cot_prompt_builder import CoTPromptBuilder
 
 load_dotenv()
 
@@ -32,7 +33,9 @@ with open("models/multimodal_retrieval_cot/stage5_mllm_inference/config.json", "
     config = json.load(f)
 
 MODEL_NAME = config["model_name"]
-SYSTEM_PROMPT = config["system_prompt"]
+with open("models/multimodal_retrieval_cot/stage5_mllm_inference/system_prompt.txt", "r", encoding="utf-8") as f:
+    SYSTEM_PROMPT = f.read()
+    
 MAX_NEW_TOKENS = config["max_new_tokens"]
 TEMPERATURE = config["temperature"]
 
@@ -64,7 +67,7 @@ class MLLMInference:
 
         self.processor = AutoProcessor.from_pretrained(self.model_name)
 
-    def build_messages(self, prompt_text: str, images) -> List[Dict[str, Any]]:
+    def build_messages(self, prompt_text, images) -> List[Dict[str, Any]]:
         user_content = []
         for img in images:
             user_content.append({"type": "image", "image": img})
@@ -83,7 +86,7 @@ class MLLMInference:
         return messages
         
     
-    def prepare_input(self, messages):
+    def prepare_inputs(self, messages):
         text_prompt = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
@@ -119,3 +122,76 @@ class MLLMInference:
             clean_up_tokenization_spaces=False,
         )[0]
         return pred
+    
+if __name__ == "__main__":
+    ex = {
+        "questionId": 337,
+        "question": "what is the date mentioned in this letter?",
+        "question_types": [
+            "handwritten",
+            "form"
+        ],
+        "image": "data\\spdocvqa_images\\xnbl0037_1.png",
+        "docId": 279,
+        "ucsf_document_id": "xnbl0037",
+        "ucsf_document_page_no": "1",
+        "ocr": "xnbl0037_1.json",
+        "answers": [
+            "1/8/93"
+        ],
+        "image_description": "The document is a form or letter titled \"Confidential\" and \"RJRT PR APPROVAL\" at the top. It contains several structured fields in the top-left section, including 'DATE:', 'SUBJECT:', 'PROPOSED RELEASE DATE:', 'FOR RELEASE TO:', and 'CONTACT:'. A handwritten date, '1/8/93', is visible next to the 'DATE:' label. Further down, there is a list of names under a 'ROUTE TO:' section, and a table-like structure on the right with headers 'Initials' and 'Date', under which '1/8/93' is also visibly written.",
+        "answer_explanation": "Step 1: Located the label 'DATE :' with bounding box [254,295,343,294,344,322,255,323] in the top-left section of the document. Step 2: Identified the date value next to this label. The OCR text for this value is '1/8/13' with bounding box [396,262,561,262,559,333,398,327]. Visually, the date written is '1/8/93'.",
+        "reasoning_type": "single-hop"
+    }
+    
+    retrieved_examples = [
+        {
+        "questionId": 338,
+        "question": "what is the contact person name mentioned in letter?",
+        "question_types": [
+            "handwritten",
+            "form"
+        ],
+        "image": "data\\spdocvqa_images\\xnbl0037_1.png",
+        "docId": 279,
+        "ucsf_document_id": "xnbl0037",
+        "ucsf_document_page_no": "1",
+        "ocr": "xnbl0037_1.json",
+        "answers": [
+            "P. Carter",
+            "p. carter"
+        ],
+        "image_description": "The document is a memo or internal form with a 'Confidential' label at the top. It has several fields arranged vertically on the left side, including 'DATE:', 'PROPOSED RELEASE DATE:', 'FOR RELEASE TO:', and 'CONTACT:'. The 'CONTACT:' field is located in the middle-left section of the document. Below these fields, there is a section titled 'ROUTE TO' with a list of names. A 'Return to' instruction is present towards the bottom-middle.",
+        "answer_explanation": "Step 1: Locate the label \"CONTACT:\" in the middle-left section of the document with bounding box [252,529,411,530,410,565,251,564]. Step 2: Identify the text immediately to the right of this label. The text is \"P. CARTER\" with bounding box [429,521,663,511,666,568,432,578].",
+        "reasoning_type": "single-hop"
+    },
+    {
+        "questionId": 339,
+        "question": "Which corporation's letterhead is this?",
+        "question_types": [
+            "layout"
+        ],
+        "image": "data\\spdocvqa_images\\mxcj0037_1.png",
+        "docId": 280,
+        "ucsf_document_id": "mxcj0037",
+        "ucsf_document_page_no": "1",
+        "ocr": "mxcj0037_1.json",
+        "answers": [
+            "Brown & Williamson Tobacco Corporation"
+        ],
+        "image_description": "",
+        "answer_explanation": "",
+        "reasoning_type": ""
+    }
+    ]
+    cot_prompt_builder = CoTPromptBuilder(query_ex=ex, retrieved_examples=retrieved_examples, ocr_root="data/spdocvqa_ocr")
+    prompt_text, images = cot_prompt_builder.build()
+    
+    mllm_inference = MLLMInference()
+    messages = mllm_inference.build_messages(prompt_text=prompt_text, images=images)
+    print("Done step 1")
+    inputs = mllm_inference.prepare_inputs(messages)
+    print("Done step 2")
+    result = mllm_inference.single_generate(inputs)
+    print(result)
+    

@@ -178,7 +178,10 @@ def format_ocr_content(ocr_info: dict) -> str:
     return ocr_formatted
 
 def load_image(path: str) -> Image.Image:
-    return Image.open(path).convert("RGB")
+    image = Image.open(path).convert("RGB")
+    max_side = 1024  # try 768 if you still get OOM
+    image.thumbnail((max_side, max_side), Image.LANCZOS)
+    return image
 
 def load_ocr_text_from_file(ocr_json_path: str) -> str:
     with open(ocr_json_path, "r", encoding="utf-8") as f:
