@@ -7,12 +7,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.append(PROJECT_ROOT / "utils")
 
+from PIL import Image
 import json
 from typing import List, Dict, Any, Optional
 from utils.helper import (
-    load_ocr_text_from_file, 
-    build_example_block, 
-    build_query_block
+    load_image,
+    build_example_template, 
+    build_query_template
 )
 
 class CoTPromptBuilder:
@@ -27,34 +28,65 @@ class CoTPromptBuilder:
         self.retrieved_examples = retrieved_examples
         self.ocr_root = ocr_root
         self.max_examples = max_examples
-        self.header = """You are a visual document question answering assistant.
-You are given:
-- A document IMAGE (path is provided so the system can load it)
-- OCR_TEXT extracted from the document
-- An IMAGE_DESCRIPTION summarizing the document
-- A QUESTION about the document
+        self.header = """You are a Visual Document QA model.
+You are given examples showing how to answer a question about a document image using OCR text and reasoning.
 
-Your task:
-1. Carefully reason step by step using the OCR_TEXT and the document layout.
-2. Explain your reasoning in [CHAIN_OF_THOUGHT].
-3. Then provide the short final answer in [FINAL_ANSWER], usually a span from the document.
+For each example:
+- <image_k> means the k-th image in the input image list.
+- Use OCR_TEXT to ground your reasoning.
+- Answer step-by-step in [CHAIN_OF_THOUGHT], then output the result in [FINAL_ANSWER].
 
 Here are some examples:
-
 """
         self.full_prompt = ""
                 
     def build(self):
-        example_blocks = []
-        for i, ex in enumerate(self.retrieved_examples[:self.max_examples], start=1):
-            example_blocks.append(build_example_block(ex, i))
+        prompt_blocks = []
+        prompt_images = []
         
-        example_str = "\n\n".join(example_blocks)
+        for idx, ex in enumerate(self.retrieved_examples[:self.max_examples], start=1):
+            # Load image
+            img = Image.open(ex["image"]).convert("RGB")
+            prompt_images.append(img)
+
+            # Build text block
+            block_text = build_example_template(ex, idx)
+            prompt_blocks.append(block_text)
         
-        query_block = build_query_block(self.query_ex, self.ocr_root)
-        full_prompt = self.header + example_str + "\n\nNow answer the query example.\n\n" + query_block
-        self.full_prompt = full_prompt
-        return full_prompt
-    
+        query_image_slot = len(prompt_images) + 1
+
+        q_img = Image.open(self.query_ex["image"]).convert("RGB")
+        prompt_images.append(q_img)
+
+        query_text = build_query_template(self.query_ex, self.ocr_root, idx=query_image_slot)
+
+        # ----- Build final prompt text -----
+        prompt_text = self.header + "\n".join(prompt_blocks) + "\nNow answer the query example:\n" + query_text
+
+        return prompt_text, prompt_images
+        
     def length(self):
         return len(self.full_prompt)
+    
+# if __name__ == "__main__":
+#     ex = {
+#         "questionId": 337,
+#         "question": "what is the date mentioned in this letter?",
+#         "question_types": [
+#             "handwritten",
+#             "form"
+#         ],
+#         "image": "data\\spdocvqa_images\\xnbl0037_1.png",
+#         "docId": 279,
+#         "ucsf_document_id": "xnbl0037",
+#         "ucsf_document_page_no": "1",
+#         "ocr": "xnbl0037_1.json",
+#         "answers": [
+#             "1/8/93"
+#         ],
+#         "image_description": "The document is a form or letter titled \"Confidential\" and \"RJRT PR APPROVAL\" at the top. It contains several structured fields in the top-left section, including 'DATE:', 'SUBJECT:', 'PROPOSED RELEASE DATE:', 'FOR RELEASE TO:', and 'CONTACT:'. A handwritten date, '1/8/93', is visible next to the 'DATE:' label. Further down, there is a list of names under a 'ROUTE TO:' section, and a table-like structure on the right with headers 'Initials' and 'Date', under which '1/8/93' is also visibly written.",
+#         "answer_explanation": "Step 1: Located the label 'DATE :' with bounding box [254,295,343,294,344,322,255,323] in the top-left section of the document. Step 2: Identified the date value next to this label. The OCR text for this value is '1/8/13' with bounding box [396,262,561,262,559,333,398,327]. Visually, the date written is '1/8/93'.",
+#         "reasoning_type": "single-hop"
+#     }
+#     cot_prompt_builder = CoTPromptBuilder(query_ex=ex, retrieved_examples=[ex], ocr_root="data/spdocvqa_ocr")
+#     print(*cot_prompt_builder.build(), end="\n\n")

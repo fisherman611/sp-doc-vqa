@@ -194,11 +194,10 @@ def load_ocr_text_from_file(ocr_json_path: str) -> str:
         
     return "\n".join(texts)
 
-def build_example_block(
+def build_example_template(
     ex: Dict[str, Any],
     idx: int
 ) -> str:
-    image_path = ex["image"]
     question = ex["question"]
     img_desc = ex.get("image_description", "")
     answers = ex.get("answers", [])
@@ -206,7 +205,7 @@ def build_example_block(
     
     block = []
     block.append(f"### Example {idx}\n")
-    block.append(f"[IMAGE_PATH]: {image_path}\n")
+    block.append(f"<image_{idx}>\n")
     if img_desc:
         block.append(f"[IMAGE_DESCRIPTION]: {img_desc}\n")
     
@@ -221,22 +220,20 @@ def build_example_block(
     
     return "\n".join(block)
     
-def build_query_block(
+def build_query_template(
     query_ex: Dict[str, Any],
     ocr_root: str,
+    idx: int
 ) -> str:
-    image_path = query_ex["image"]
     question = query_ex["question"]
     img_desc = query_ex.get("image_description", "")
-    answers = query_ex.get("answers", [])
-    answer_explanation = query_ex.get("answer_explanation", "")
     ocr_filename = query_ex.get("ocr")
     ocr_path = os.path.join(ocr_root, ocr_filename) if ocr_filename else None
     ocr_text = load_ocr_text_from_file(ocr_path) if ocr_path and os.path.exists(ocr_path) else ""
     
     block = []
     block.append("### Query Example")
-    block.append(f"[IMAGE_PATH]\n{image_path}\n")
+    block.append(f"<image_{idx}>\n")
     if img_desc:
         block.append(f"[IMAGE_DESCRIPTION]\n{img_desc}\n")
 
