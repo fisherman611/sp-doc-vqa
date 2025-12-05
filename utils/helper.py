@@ -11,6 +11,7 @@ import torch
 import os
 import numpy as np
 import re
+from PIL import Image
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -172,3 +173,6 @@ def format_ocr_content(ocr_info: dict) -> str:
         ocr_formatted += "\n"
     
     return ocr_formatted
+
+def load_image(path: str) -> Image.Image:
+    return Image.open(path).convert("RGB")
