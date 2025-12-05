@@ -28,16 +28,6 @@ class CoTPromptBuilder:
         self.retrieved_examples = retrieved_examples
         self.ocr_root = ocr_root
         self.max_examples = max_examples
-        self.header = """You are a Visual Document QA model.
-You are given examples showing how to answer a question about a document image using OCR text and reasoning.
-
-For each example:
-- <image_k> means the k-th image in the input image list.
-- Use OCR_TEXT to ground your reasoning.
-- Answer step-by-step in [CHAIN_OF_THOUGHT], then output the result in [FINAL_ANSWER].
-
-Here are some examples:
-"""
         self.full_prompt = ""
                 
     def build(self):
@@ -61,7 +51,7 @@ Here are some examples:
         query_text = build_query_template(self.query_ex, self.ocr_root, idx=query_image_slot)
 
         # ----- Build final prompt text -----
-        prompt_text = self.header + "\n".join(prompt_blocks) + "\nNow answer the query example:\n" + query_text
+        prompt_text = "\n".join(prompt_blocks) + "\nNow answer the query example:\n" + query_text
 
         return prompt_text, prompt_images
         
