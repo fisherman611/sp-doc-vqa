@@ -206,23 +206,23 @@ class DescriptionGenerator:
             ocr_filename=ocr_filename
         )
 
-if __name__ == "__main__":
-    sample = {
-            "questionId": 49153,
-            "question": "What is the ‘actual’ value per 1000, during the year 1975?",
-            "question_types": [
-                "figure/diagram"
-            ],
-            "image": "documents/pybv0228_81.png",
-            "docId": 14465,
-            "ucsf_document_id": "pybv0228",
-            "ucsf_document_page_no": "81",
-            "answers": [
-                "0.28"
-            ],
-            "data_split": "val",
-            "ocr": "pybv0228_81.json"
-        }
-    description_generator = DescriptionGenerator()
-    description = description_generator.generate_from_sample(sample=sample, image_folder=IMAGE_FOLDER)
-    print(description)
+# if __name__ == "__main__":
+#     sample = {
+#             "questionId": 49153,
+#             "question": "What is the ‘actual’ value per 1000, during the year 1975?",
+#             "question_types": [
+#                 "figure/diagram"
+#             ],
+#             "image": "documents/pybv0228_81.png",
+#             "docId": 14465,
+#             "ucsf_document_id": "pybv0228",
+#             "ucsf_document_page_no": "81",
+#             "answers": [
+#                 "0.28"
+#             ],
+#             "data_split": "val",
+#             "ocr": "pybv0228_81.json"
+#         }
+#     description_generator = DescriptionGenerator()
+#     description = description_generator.generate_from_sample(sample=sample, image_folder=IMAGE_FOLDER)
+#     print(description)
