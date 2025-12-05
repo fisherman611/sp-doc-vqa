@@ -12,6 +12,7 @@ import os
 import numpy as np
 import re
 from PIL import Image
+from typing import Any, Dict, List, Optional
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -176,3 +177,81 @@ def format_ocr_content(ocr_info: dict) -> str:
 
 def load_image(path: str) -> Image.Image:
     return Image.open(path).convert("RGB")
+
+def load_ocr_text_from_file(ocr_json_path: str) -> str:
+    with open(ocr_json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    recognition_results = data.get("recognitionResults", [])
+    texts = []
+    for recognition_res in recognition_results:
+        
+        lines = recognition_res.get("lines", [])
+        for line in lines:
+            t = line.get("text")
+            if t:
+                texts.append(t)
+        
+    return "\n".join(texts)
+
+def build_example_block(
+    ex: Dict[str, Any],
+    idx: int
+) -> str:
+    image_path = ex["image"]
+    question = ex["question"]
+    img_desc = ex.get("image_description", "")
+    answers = ex.get("answers", [])
+    answer_explanation = ex.get("answer_explanation", "")
+    
+    block = []
+    block.append(f"### Example {idx}\n")
+    block.append(f"[IMAGE_PATH]: {image_path}\n")
+    if img_desc:
+        block.append(f"[IMAGE_DESCRIPTION]: {img_desc}\n")
+    
+    block.append(f"[QUESTION]: {question}\n")
+    if answer_explanation:
+        block.append(f"[CHAIN OF THOUGHT]: {answer_explanation}\n")
+    
+    block.append(f"[FINAL_ANSWER]:")
+    for answer in answers:
+        block.append(answer)
+    block.append("")
+    
+    return "\n".join(block)
+    
+def build_query_block(
+    query_ex: Dict[str, Any],
+    ocr_root: str,
+) -> str:
+    image_path = query_ex["image"]
+    question = query_ex["question"]
+    img_desc = query_ex.get("image_description", "")
+    answers = query_ex.get("answers", [])
+    answer_explanation = query_ex.get("answer_explanation", "")
+    ocr_filename = query_ex.get("ocr")
+    ocr_path = os.path.join(ocr_root, ocr_filename) if ocr_filename else None
+    ocr_text = load_ocr_text_from_file(ocr_path) if ocr_path and os.path.exists(ocr_path) else ""
+    
+    block = []
+    block.append("### Query Example")
+    block.append(f"[IMAGE_PATH]\n{image_path}\n")
+    if img_desc:
+        block.append(f"[IMAGE_DESCRIPTION]\n{img_desc}\n")
+
+    if ocr_text:
+        block.append("[OCR_TEXT]")
+        block.append(ocr_text + "\n")
+
+    block.append("[QUESTION]")
+    block.append(question + "\n")
+
+    # Leave CoT blank for the model to fill
+    block.append("[CHAIN_OF_THOUGHT]")
+    block.append("")  # model will generate here
+
+    block.append("[FINAL_ANSWER]")
+    block.append("")  # model will generate here
+
+    return "\n".join(block)
