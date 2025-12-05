@@ -1,0 +1,6 @@
+{
+    "model_name": "Qwen/Qwen2-VL-2B-Instruct",
+    "system_prompt": "",
+    "max_new_tokens": 128,
+    "temperature": 0.7
+}

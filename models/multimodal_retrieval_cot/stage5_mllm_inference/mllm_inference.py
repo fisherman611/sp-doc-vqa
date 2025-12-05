@@ -28,15 +28,22 @@ from huggingface_hub import login
 
 login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
+with open("models/multimodal_retrieval_cot/stage5_mllm_inference/config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+
+MODEL_NAME = config["model_name"]
+SYSTEM_PROMPT = config["system_prompt"]
+MAX_NEW_TOKENS = config["max_new_tokens"]
+TEMPERATURE = config["temperature"]
 
 class MLLMInference:
     def __init__(
         self,
-        model_name: str,
-        system_prompt: str,
+        model_name: str=MODEL_NAME,
+        system_prompt: str=SYSTEM_PROMPT,
         device: str = None,
-        max_new_tokens: int = 128,
-        temperature: float = 0.7,
+        max_new_tokens: int = MAX_NEW_TOKENS,
+        temperature: float = TEMPERATURE,
     ) -> None:
         self.model_name = model_name
         self.system_prompt = system_prompt
