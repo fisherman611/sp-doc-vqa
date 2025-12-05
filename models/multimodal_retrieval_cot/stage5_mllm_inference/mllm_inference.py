@@ -54,7 +54,7 @@ class MLLMInference:
         self.temperature = temperature
 
         if device is None:
-            self.device = "cuda" if torch.cuda.is_available else "cpu"
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
             self.device = device
 
