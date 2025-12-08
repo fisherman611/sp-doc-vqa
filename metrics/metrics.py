@@ -10,9 +10,9 @@ import json
 from ema import *
 from anls import *
 
-# with open("results/qwen2_vl_2b_instruct_results.json", "r", encoding="utf-8") as f:
+# with open("results/qwen2_vl_2b_instruct_huggingface_results.json", "r", encoding="utf-8") as f:
 # with open("results/gemini_vqa_results.json", "r", encoding="utf-8") as f:
-# with open("results/qwen2_vl_7b_instruct_results.json", "r", encoding="utf-8") as f:
+# with open("results/qwen2_vl_7b_instruct_unsloth_results.json", "r", encoding="utf-8") as f:
 # with open("results/qwen2_vl_7b_results.json", "r", encoding="utf-8") as f:
 with open("results/qwen2_vl_2b_results.json", "r", encoding="utf-8") as f:
     results = json.load(f)

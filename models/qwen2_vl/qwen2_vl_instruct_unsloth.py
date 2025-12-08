@@ -12,7 +12,7 @@ from unsloth import FastVisionModel
 with open("models/qwen2_vl/config.json", "r", encoding="utf-8") as f:
     config = json.load(f)
 
-MODEL_NAME = "unsloth/Qwen2-VL-7B-Instruct-bnb-4bit"
+MODEL_NAME = config["unsloth_model_name_instruct"]
 DATA_PATH = Path(config["data_path"])
 IMAGE_FOLDER = Path(config["image_folder"])
 OUTPUT_PATH = Path("results/qwen_vl_7b_results.json")
