@@ -13,7 +13,8 @@ from anls import *
 # with open("results/qwen2_vl_2b_instruct_results.json", "r", encoding="utf-8") as f:
 # with open("results/gemini_vqa_results.json", "r", encoding="utf-8") as f:
 # with open("results/qwen2_vl_7b_instruct_results.json", "r", encoding="utf-8") as f:
-with open("results/qwen_vl_7b_results.json", "r", encoding="utf-8") as f:
+# with open("results/qwen2_vl_7b_results.json", "r", encoding="utf-8") as f:
+with open("results/qwen2_vl_2b_results.json", "r", encoding="utf-8") as f:
     results = json.load(f)
 
 pred_map = {results[i]["questionId"]: results[i]["predicted_answer"] for i in range(len(results))}
